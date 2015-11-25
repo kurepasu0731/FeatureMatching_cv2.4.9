@@ -14,9 +14,9 @@ public:
 	WebCamera projector;
 
 	//基礎行列
-	cv::Mat F;
+	//cv::Mat F;
 	//基本行列
-	cv::Mat E;
+	//cv::Mat E;
 
 	//使用する画像
 	cv::Mat src_camImage; // 画像1のファイル名
@@ -140,23 +140,21 @@ public:
 	}
 
 	cv::Mat findEssientialMat(){
+		// 焦点距離とレンズ主点
+        double cam_f, proj_f, cam_fovx, cam_fovy, proj_fovx, proj_fovy, cam_pasp, proj_pasp;
+        cv::Point2d cam_pp, proj_pp;
+		cv::calibrationMatrixValues(camera.cam_K, cv::Size(camera.width, camera.height), 0.0, 0.0, cam_fovx, cam_fovy, cam_f, cam_pp, cam_pasp);
+		cv::calibrationMatrixValues(projector.cam_K, cv::Size(projector.width, projector.height), 0.0, 0.0, proj_fovx, proj_fovy, proj_f, proj_pp, proj_pasp);
 
-		std::cout << "Camera Parameter:\n" << camera.cam_K << std::endl;
-		std::cout << "Projector Parameter:\n" << projector.cam_K << std::endl;
-
-		std::cout << "Camera:\n fx fy px py ---> " << camera.cam_K.at<double>(0,0) << " "
-																		<<  camera.cam_K.at<double>(1,1) << " "
-																		<< camera.cam_K.at<double>(0,2) << " "
-																		<< camera.cam_K.at<double>(1,2) << std::endl;
 
 		//対応点を正規化(fx=fy=1, cx=cy=0とする)
 		std::vector<cv::Point2d>norm_cam_pts, norm_proj_pts;
 		for(int i = 0; i < cam_pts.size(); i++)
 		{
-			double norm_cam_x = (cam_pts[i].x - camera.cam_K.at<double>(0,2)) / camera.cam_K.at<double>(0,0);
-			double norm_cam_y = (cam_pts[i].y - camera.cam_K.at<double>(1,2)) / camera.cam_K.at<double>(1,1);
-			double norm_proj_x = (proj_pts[i].x - projector.cam_K.at<double>(0,2)) / projector.cam_K.at<double>(0,0);
-			double norm_proj_y = (proj_pts[i].y - projector.cam_K.at<double>(1,2)) / projector.cam_K.at<double>(1,1);
+			double norm_cam_x = (cam_pts[i].x - cam_pp.x) / cam_f;
+			double norm_cam_y = (cam_pts[i].y - cam_pp.y) / cam_f;
+			double norm_proj_x = (proj_pts[i].x - proj_pp.x) / proj_f;
+			double norm_proj_y = (proj_pts[i].y - proj_pp.y) / proj_f;
 
 			std::cout << "(x, y) : (" << cam_pts[i].x << ", " << cam_pts[i].y  << ") ---> (" << norm_proj_x << ", " << norm_proj_y << ")" << std::endl;
 			//std::cout << "(x, y) :" << norm_proj_x << ", " << norm_proj_y << std::endl;
@@ -166,18 +164,24 @@ public:
 		}
 
 		//基礎行列の算出
+		cv::Mat_<double> F;
 		//findfundamentalMat( pt1, pt2, F行列を計算する手法, 点からエピポーラ線までの最大距離, Fの信頼度)
 		if(norm_cam_pts.size() == 7)
-			F = cv::findFundamentalMat(norm_cam_pts, norm_proj_pts,cv::FM_7POINT, 3.0, 0.99);
+			F = cv::findFundamentalMat(norm_cam_pts, norm_proj_pts,cv::FM_7POINT, 0.1, 0.99);
+			//F = cv::findFundamentalMat(cam_pts, proj_pts,cv::FM_7POINT, 3.0, 0.99);
 		else if(norm_cam_pts.size() == 8)
-			F = cv::findFundamentalMat(norm_cam_pts, norm_proj_pts,cv::FM_8POINT, 3.0, 0.99);
+			F = cv::findFundamentalMat(norm_cam_pts, norm_proj_pts,cv::FM_8POINT, 0.1, 0.99);
+			//F = cv::findFundamentalMat(cam_pts, proj_pts,cv::FM_8POINT, 3.0, 0.99);
 		else
-			F = cv::findFundamentalMat(norm_cam_pts, norm_proj_pts,cv::RANSAC, 3.0, 0.99);
+			F = cv::findFundamentalMat(norm_cam_pts, norm_proj_pts,cv::RANSAC, 0.1, 0.99);
+			//F = cv::findFundamentalMat(cam_pts, proj_pts,cv::RANSAC, 3.0, 0.99);
 
 		//基本行列の算出
-		E = camera.cam_K.t() * F * projector.cam_K;
+//		cv::Mat_<double> Kc = camera.cam_K;
+//		cv::Mat_<double> Kp = projector.cam_K;
+//		cv::Mat_<double> E = Kc.t() * F * Kp;
 
-		return E;
+		return F;
 	}
 
 
@@ -198,14 +202,21 @@ public:
 
 	int recoverPose( cv::InputArray E, cv::OutputArray _R, cv::OutputArray _t)
 	{
-		//カメラ
-		double cam_fx = camera.cam_K.at<double>(0,0);
-		double cam_fy = camera.cam_K.at<double>(1,1);
-		cv::Point2d cam_pp = cv::Point2d(camera.cam_K.at<double>(0,2), camera.cam_K.at<double>(1,2));
-		//プロジェクタ
-		double proj_fx = projector.cam_K.at<double>(0,0);
-		double proj_fy = projector.cam_K.at<double>(1,1);
-		cv::Point2d proj_pp = cv::Point2d(projector.cam_K.at<double>(0,2), projector.cam_K.at<double>(1,2));
+		////カメラ
+		//double cam_fx = camera.cam_K.at<double>(0,0);
+		//double cam_fy = camera.cam_K.at<double>(1,1);
+		//cv::Point2d cam_pp = cv::Point2d(camera.cam_K.at<double>(0,2), camera.cam_K.at<double>(1,2));
+		////プロジェクタ
+		//double proj_fx = projector.cam_K.at<double>(0,0);
+		//double proj_fy = projector.cam_K.at<double>(1,1);
+		//cv::Point2d proj_pp = cv::Point2d(projector.cam_K.at<double>(0,2), projector.cam_K.at<double>(1,2));
+
+		// 焦点距離とレンズ主点
+        double cam_f, proj_f, cam_fovx, cam_fovy, proj_fovx, proj_fovy, cam_pasp, proj_pasp;
+        cv::Point2d cam_pp, proj_pp;
+		cv::calibrationMatrixValues(camera.cam_K, cv::Size(camera.width, camera.height), 0.0, 0.0, cam_fovx, cam_fovy, cam_f, cam_pp, cam_pasp);
+		cv::calibrationMatrixValues(projector.cam_K, cv::Size(projector.width, projector.height), 0.0, 0.0, proj_fovx, proj_fovy, proj_f, proj_pp, proj_pasp);
+
 
 		cv::InputArray _points1 = cam_pts;
 		cv::InputArray _points2 = proj_pts;
@@ -226,10 +237,10 @@ public:
 		points1.convertTo(points1, CV_64F);
 		points2.convertTo(points2, CV_64F);
 
-		points1.col(0) = (points1.col(0) - cam_pp.x) / cam_fx;
-		points2.col(0) = (points2.col(0) - proj_pp.x) / proj_fx;
-		points1.col(1) = (points1.col(1) - cam_pp.y) / cam_fy;
-		points2.col(1) = (points2.col(1) - proj_pp.y) / proj_fy;
+		points1.col(0) = (points1.col(0) - cam_pp.x) / cam_f;
+		points2.col(0) = (points2.col(0) - proj_pp.x) / proj_f;
+		points1.col(1) = (points1.col(1) - cam_pp.y) / cam_f;
+		points2.col(1) = (points2.col(1) - proj_pp.y) / proj_f;
 
 		points1 = points1.t();
 		points2 = points2.t();
@@ -362,6 +373,7 @@ public:
 	{
 		cv::Mat E = _E.getMat().reshape(1, 3);
 		CV_Assert(E.cols == 3 && E.rows == 3);
+
 
 		cv::Mat D, U, Vt;
 		cv::SVD::compute(E, D, U, Vt);

@@ -16,7 +16,7 @@ int main()
 	//カメラ
 	WebCamera mainCamera(640, 480, "webCamera0");
 	//プロジェクタ
-	WebCamera mainProjector(1280, 800, "projector0");
+	WebCamera mainProjector(640, 480, "projector0");
 
 	int frame = 0;
 
@@ -68,19 +68,19 @@ int main()
 			break;
 		case '2' :
 			{
-				mainCamera.loadCalibParam("Camera.xml");
+				mainCamera.loadCalibParam("inCame.xml");
 				printf("カメラキャリブレーションデータ読み込み\n");
-				mainProjector.loadCalibParam("Projector.xml");
+				mainProjector.loadCalibParam("inCame.xml");
 				printf("プロジェクタキャリブレーションデータ読み込み\n");
 			}
 			break;
 		case '3':
 			{
 				//SfM
-				SfM sfm("./Image/src/cap0.png", "./Image/src/cap1.png", mainCamera, mainProjector);
+				SfM sfm("./Image/dedennne/cap34.jpg", "./Image/dedennne/cap35.jpg", mainCamera, mainProjector);
 				//①特徴点マッチングで対応点取得
 				sfm.featureMatching("SIFT", "SIFT", "BruteForce-L1", true);
-				sfm.saveResult("./Image/result/result_9.jpg");
+				sfm.saveResult("./Image/result/result_10.jpg");
 				//②基本行列の算出
 				cv::Mat E = sfm.findEssientialMat();
 				std::cout << "\nEssentiamMat:\n" << E << std::endl;

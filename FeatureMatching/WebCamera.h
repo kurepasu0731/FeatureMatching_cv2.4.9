@@ -40,7 +40,7 @@ public:
 		height = _height;
 		winName = _winName;
 		vc = cv::VideoCapture(0);
-		save_dir = "./Image/movie/";
+		save_dir = "./Image/capture/";
 		capture_num = getStoredImage(save_dir);
 		calib_flag = false;
 		cv::Size captureSize(width, height);
@@ -135,7 +135,7 @@ public:
 				std::vector<std::vector<cv::Point3f>>	worldPoints; 
 				std::vector<std::vector<cv::Point2f>>	cameraPoints;
 				//①画像からチェッカ交点を取得
-				for(int i = 0; i < capture_num; i++)
+				for(int i = 1; i <= capture_num; i++)
 				{
 					std::vector<cv::Point2f> imagePoint;
 					std::string filename = save_dir + "cap"+ std::to_string(i) + ".jpg";
@@ -150,7 +150,7 @@ public:
 				double cam_error = cv::calibrateCamera(worldPoints, cameraPoints, cv::Size(width, height), cam_K, cam_dist, cam_R, cam_T, cv::CALIB_FIX_K3, 
 																			cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 200, DBL_EPSILON));
 				//③結果の保存
-				cv::FileStorage fs("Camera.xml", cv::FileStorage::WRITE);
+				cv::FileStorage fs("inCame.xml", cv::FileStorage::WRITE);
 				fs << "cam_K" << cam_K << "cam_dist" << cam_dist
 				<< "cam_R0" << cam_R.at(0) << "cam_T0" << cam_T.at(0);
 				fs.release();
