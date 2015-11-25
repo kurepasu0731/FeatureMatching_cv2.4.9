@@ -55,9 +55,9 @@ int main()
 
 		case '0':
 			{
-				FeatureMatching featureMatching("./Image/dora_3d/dora02.jpg", "./Image/dora_3d/dora_proj_01.jpg", "SIFT", "SIFT", "BruteForce-L1", true);
+				FeatureMatching featureMatching("./Image/movie/cap1.jpg", "./Image/movie/cap2.jpg", "SIFT", "SIFT", "BruteForce-L1", true);
 				featureMatching.apply();
-				featureMatching.saveResult("./Image/result/result_6.jpg");
+				featureMatching.saveResult("./Image/result/result_10.jpg");
 				break;
 			}
 		case '1':
@@ -77,16 +77,19 @@ int main()
 		case '3':
 			{
 				//SfM
-				SfM sfm("./Image/dora_3d/dora03.jpg", "./Image/dora_3d/dora_proj_01.jpg", mainCamera, mainProjector);
+				SfM sfm("./Image/src/cap0.png", "./Image/src/cap1.png", mainCamera, mainProjector);
 				//①特徴点マッチングで対応点取得
 				sfm.featureMatching("SIFT", "SIFT", "BruteForce-L1", true);
-				sfm.saveResult("./Image/result/result_8.jpg");
+				sfm.saveResult("./Image/result/result_9.jpg");
 				//②基本行列の算出
 				cv::Mat E = sfm.findEssientialMat();
 				std::cout << "\nEssentiamMat:\n" << E << std::endl;
 
 				cv::Mat R = cv::Mat::eye(3,3,CV_64F);
 				cv::Mat t = cv::Mat::zeros(3,1,CV_64F);
+
+				//③R,tの算出
+				sfm.recoverPose(E, R, t);
 				//③基本行列の分解
 				sfm.findProCamPose(E, R, t);
 				std::cout << "\nR:\n" << R << std::endl;
