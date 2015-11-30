@@ -4,6 +4,12 @@
 #include "WebCamera.h"
 #include "SfM.h"
 
+//PCL
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/visualization/pcl_visualizer.h>
+
+
 int main()
 {
 	//操作説明
@@ -68,32 +74,62 @@ int main()
 			break;
 		case '2' :
 			{
-				mainCamera.loadCalibParam("inCame.xml");
+				mainCamera.loadCalibParam("WebCamera.xml");
 				printf("カメラキャリブレーションデータ読み込み\n");
-				mainProjector.loadCalibParam("inCame.xml");
+				mainProjector.loadCalibParam("WebCamera.xml");
 				printf("プロジェクタキャリブレーションデータ読み込み\n");
 			}
 			break;
 		case '3':
 			{
 				//SfM
-				SfM sfm("./Image/dedennne/cap34.jpg", "./Image/dedennne/cap35.jpg", mainCamera, mainProjector);
+				SfM sfm("./Image/capture/cap38.jpg", "./Image/capture/cap40.jpg", mainCamera, mainProjector);
 				//①特徴点マッチングで対応点取得
-				sfm.featureMatching("SIFT", "SIFT", "BruteForce-L1", true);
+				sfm.featureMatching("ORB", "ORB", "BruteForce-L1", true);
 				sfm.saveResult("./Image/result/result_10.jpg");
 				//②基本行列の算出
-				cv::Mat E = sfm.findEssientialMat();
-				std::cout << "\nEssentiamMat:\n" << E << std::endl;
+				cv::Mat E1 = sfm.findEssentialMat(); //cv::calibrationMatrixValues
+				cv::Mat E2 = sfm.findEssentialMat2();//内部行列の逆行列を掛ける
 
-				cv::Mat R = cv::Mat::eye(3,3,CV_64F);
-				cv::Mat t = cv::Mat::zeros(3,1,CV_64F);
+				cv::Mat R1 = cv::Mat::eye(3,3,CV_64F);
+				cv::Mat t1 = cv::Mat::zeros(3,1,CV_64F);
+				cv::Mat R2 = cv::Mat::eye(3,3,CV_64F);
+				cv::Mat t2 = cv::Mat::zeros(3,1,CV_64F);
 
 				//③R,tの算出
-				sfm.recoverPose(E, R, t);
+				sfm.recoverPose(E1, R1, t1);
+				sfm.recoverPose(E2, R2, t2);
 				//③基本行列の分解
-				sfm.findProCamPose(E, R, t);
-				std::cout << "\nR:\n" << R << std::endl;
-				std::cout << "t:\n" << t << std::endl;
+				//sfm.findProCamPose(E, R, t);
+				std::cout << "\nR1:\n" << R1 << std::endl;
+				std::cout << "t1:\n" << t1 << std::endl;
+				std::cout << "\nR2:\n" << R2 << std::endl;
+				std::cout << "t2:\n" << t2 << std::endl;
+
+				// 3Dビューア
+				pcl::visualization::PCLVisualizer viewer("3D Viewer");
+				viewer.setBackgroundColor(0, 0, 0);
+				viewer.addCoordinateSystem(2.0);
+				viewer.initCameraParameters();
+				Eigen::Affine3f view1, view2;
+				Eigen::Matrix4f _t1, _t2;
+				//E1の結果
+				_t1 << (float)R1.at<double>(0,0) , (float)R1.at<double>(0,1) , (float)R1.at<double>(0,2) , (float)t1.at<double>(0,0), 
+						  (float)R1.at<double>(1,0) , (float)R1.at<double>(1,1) , (float)R1.at<double>(1,2) , (float)t1.at<double>(1,0), 
+						  (float)R1.at<double>(2,0) , (float)R1.at<double>(2,1) , (float)R1.at<double>(2,2) , (float)t1.at<double>(2,0), 
+						  0.0f, 0.0f ,0.0f, 1.0f;
+				std::cout << "_t1:\n"<< _t1 <<std::endl;
+				view1 = _t1;
+				viewer.addCoordinateSystem(1.0, view1);
+				//E2の結果
+				_t2 << (float)R2.at<double>(0,0) , (float)R2.at<double>(0,1) , (float)R2.at<double>(0,2) , (float)t2.at<double>(0,0), 
+						  (float)R2.at<double>(1,0) , (float)R2.at<double>(1,1) , (float)R2.at<double>(1,2) , (float)t2.at<double>(1,0), 
+						  (float)R2.at<double>(2,0) , (float)R2.at<double>(2,1) , (float)R2.at<double>(2,2) , (float)t2.at<double>(2,0), 
+						  0.0f, 0.0f ,0.0f, 1.0f;
+				std::cout << "_t2:\n"<< _t2 <<std::endl;
+				view2 = _t2;
+				viewer.addCoordinateSystem(0.5, view2);
+
 
 			}
 			break;
