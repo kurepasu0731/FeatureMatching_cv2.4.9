@@ -91,42 +91,48 @@ public:
 			matcher->match(descriptor1, descriptor2, dmatch);
 		}
 
-		//最小距離
-		double min_dist = DBL_MAX;
-		for(int j = 0; j < (int)dmatch.size(); j++)
-		{
-			double dist = dmatch[j].distance;
-			if(dist < min_dist) min_dist = (dist < 1.0) ? 1.0 : dist;
-		}
-
-		//良いペアのみ残す
-		double cutoff = 5.0 * min_dist;
-		std::set<int> existing_trainIdx;
-		std::vector<cv::DMatch> matches_good;
-		for(int j = 0; j < (int)dmatch.size(); j++)
-		{
-			if(dmatch[j].trainIdx <= 0) dmatch[j].trainIdx = dmatch[j].imgIdx;
-			if(dmatch[j].distance > 0.0 && dmatch[j].distance < cutoff){
-			//x座標で決め打ちしきい値(マスクの代わり)
-//			if(dmatch[j].distance > 0.0 && dmatch[j].distance < cutoff && keypoint1[dmatch[j].queryIdx].pt.x > 240 && keypoint2[dmatch[j].trainIdx].pt.x > 240){
-				if(existing_trainIdx.find(dmatch[j].trainIdx) == existing_trainIdx.end() && dmatch[j].trainIdx >= 0 && dmatch[j].trainIdx < (int)keypoint2.size()) {
-					matches_good.push_back(dmatch[j]);
-                    existing_trainIdx.insert(dmatch[j].trainIdx);
-				}
-			}
-		}
-
-        // 対応点の登録(5ペア以上は必要)
-        if (matches_good.size() > 10) {
-            for (int j = 0; j < (int)matches_good.size(); j++) {
-                cam_pts.push_back(keypoint1[matches_good[j].queryIdx].pt);
-                proj_pts.push_back(keypoint2[matches_good[j].trainIdx].pt);
+//		//最小距離
+//		double min_dist = DBL_MAX;
+//		for(int j = 0; j < (int)dmatch.size(); j++)
+//		{
+//			double dist = dmatch[j].distance;
+//			if(dist < min_dist) min_dist = (dist < 1.0) ? 1.0 : dist;
+//		}
+//
+//		//良いペアのみ残す
+//		double cutoff = 5.0 * min_dist;
+//		std::set<int> existing_trainIdx;
+//		std::vector<cv::DMatch> matches_good;
+//		for(int j = 0; j < (int)dmatch.size(); j++)
+//		{
+//			if(dmatch[j].trainIdx <= 0) dmatch[j].trainIdx = dmatch[j].imgIdx;
+//			if(dmatch[j].distance > 0.0 && dmatch[j].distance < cutoff){
+//			//x座標で決め打ちしきい値(マスクの代わり)
+////			if(dmatch[j].distance > 0.0 && dmatch[j].distance < cutoff && keypoint1[dmatch[j].queryIdx].pt.x > 240 && keypoint2[dmatch[j].trainIdx].pt.x > 240){
+//				if(existing_trainIdx.find(dmatch[j].trainIdx) == existing_trainIdx.end() && dmatch[j].trainIdx >= 0 && dmatch[j].trainIdx < (int)keypoint2.size()) {
+//					matches_good.push_back(dmatch[j]);
+//                    existing_trainIdx.insert(dmatch[j].trainIdx);
+//				}
+//			}
+//		}
+//
+//        // 対応点の登録(5ペア以上は必要)
+//        if (matches_good.size() > 10) {
+//            for (int j = 0; j < (int)matches_good.size(); j++) {
+//                cam_pts.push_back(keypoint1[matches_good[j].queryIdx].pt);
+//                proj_pts.push_back(keypoint2[matches_good[j].trainIdx].pt);
+//            }
+//		}
+        if (dmatch.size() > 10) {
+            for (int j = 0; j < (int)dmatch.size(); j++) {
+                cam_pts.push_back(keypoint1[dmatch[j].queryIdx].pt);
+                proj_pts.push_back(keypoint2[dmatch[j].trainIdx].pt);
             }
 		}
 
 		// マッチング結果の表示
-		cv::drawMatches(src_camImage, keypoint1, src_projImage, keypoint2, matches_good, result);
-		//cv::drawMatches(src_image1, keypoint1, src_image2, keypoint2, dmatch, result);
+		//cv::drawMatches(src_camImage, keypoint1, src_projImage, keypoint2, matches_good, result);
+		cv::drawMatches(src_camImage, keypoint1, src_projImage, keypoint2, dmatch, result);
 		//cv::Mat resize;
 		//result.copyTo(resize);
 		//cv::resize(result, resize, resize.size(), 0.5, 0.5);
@@ -139,7 +145,7 @@ public:
 		cv::imwrite(resultImageName, result);
 	}
 
-	cv::Mat findEssientialMat(){
+	cv::Mat findEssentialMat(){
 		// 焦点距離とレンズ主点
         double cam_f, proj_f, cam_fovx, cam_fovy, proj_fovx, proj_fovy, cam_pasp, proj_pasp;
         cv::Point2d cam_pp, proj_pp;
@@ -156,8 +162,7 @@ public:
 			double norm_proj_x = (proj_pts[i].x - proj_pp.x) / proj_f;
 			double norm_proj_y = (proj_pts[i].y - proj_pp.y) / proj_f;
 
-			std::cout << "(x, y) : (" << cam_pts[i].x << ", " << cam_pts[i].y  << ") ---> (" << norm_proj_x << ", " << norm_proj_y << ")" << std::endl;
-			//std::cout << "(x, y) :" << norm_proj_x << ", " << norm_proj_y << std::endl;
+			//std::cout << "(x, y) : (" << cam_pts[i].x << ", " << cam_pts[i].y  << ") ---> (" << norm_proj_x << ", " << norm_proj_y << ")" << std::endl;
 
 			norm_cam_pts.push_back(cv::Point2d(norm_cam_x, norm_cam_y));
 			norm_proj_pts.push_back(cv::Point2d(norm_proj_x, norm_proj_y));
@@ -181,14 +186,60 @@ public:
 //		cv::Mat_<double> Kp = projector.cam_K;
 //		cv::Mat_<double> E = Kc.t() * F * Kp;
 
+		std::cout << "\nEssentiamMat1:\n" << F << std::endl;
 		return F;
 	}
 
 
+	cv::Mat findEssentialMat2(){
+
+		std::vector<cv::Point2d>norm_cam_pts, norm_proj_pts;
+		for(int i = 0; i < cam_pts.size(); i++)
+		{
+			cv::Mat ip(3, 1, CV_64FC1);
+			cv::Point2d p;
+			//カメラの点
+			ip.at<double>(0) = cam_pts[i].x;
+			ip.at<double>(1) = cam_pts[i].y;
+			ip.at<double>(2) = 1.0;
+			ip = camera.cam_K.inv()*ip;
+			p.x = ip.at<double>(0);
+			p.y = ip.at<double>(1);
+			norm_cam_pts.push_back(p);
+			//プロジェクタの点
+			ip.at<double>(0) = proj_pts[i].x;
+			ip.at<double>(1) = proj_pts[i].y;
+			ip.at<double>(2) = 1.0;
+			ip = projector.cam_K.inv()*ip;
+			p.x = ip.at<double>(0);
+			p.y = ip.at<double>(1);
+			norm_proj_pts.push_back(p);
+		}
+
+		//基礎行列の算出
+		cv::Mat_<double> F;
+		//findfundamentalMat( pt1, pt2, F行列を計算する手法, 点からエピポーラ線までの最大距離, Fの信頼度)
+		if(norm_cam_pts.size() == 7)
+			F = cv::findFundamentalMat(norm_cam_pts, norm_proj_pts,cv::FM_7POINT, 0.1, 0.99);
+			//F = cv::findFundamentalMat(cam_pts, proj_pts,cv::FM_7POINT, 3.0, 0.99);
+		else if(norm_cam_pts.size() == 8)
+			F = cv::findFundamentalMat(norm_cam_pts, norm_proj_pts,cv::FM_8POINT, 0.1, 0.99);
+			//F = cv::findFundamentalMat(cam_pts, proj_pts,cv::FM_8POINT, 3.0, 0.99);
+		else
+			F = cv::findFundamentalMat(norm_cam_pts, norm_proj_pts,cv::RANSAC, 0.1, 0.99);
+			//F = cv::findFundamentalMat(cam_pts, proj_pts,cv::RANSAC, 3.0, 0.99);
+
+		//基本行列の算出
+//		cv::Mat_<double> Kc = camera.cam_K;
+//		cv::Mat_<double> Kp = projector.cam_K;
+//		cv::Mat_<double> E = Kc.t() * F * Kp;
+
+		std::cout << "\nEssentiamMat2:\n" << F << std::endl;
+		return F;
+	}
+
 	void findProCamPose(const cv::Mat& E, const cv::Mat& R, const cv::Mat& t)
 	{
-			std::cout << "\nEssentiamMat2:\n" << E << std::endl;
-
             cv::Mat R1 = cv::Mat::eye(3,3,CV_64F);
             cv::Mat R2 = cv::Mat::eye(3,3,CV_64F);
 			cv::Mat t_ = cv::Mat::zeros(3,1,CV_64F);
@@ -211,15 +262,40 @@ public:
 		//double proj_fy = projector.cam_K.at<double>(1,1);
 		//cv::Point2d proj_pp = cv::Point2d(projector.cam_K.at<double>(0,2), projector.cam_K.at<double>(1,2));
 
-		// 焦点距離とレンズ主点
-        double cam_f, proj_f, cam_fovx, cam_fovy, proj_fovx, proj_fovy, cam_pasp, proj_pasp;
-        cv::Point2d cam_pp, proj_pp;
-		cv::calibrationMatrixValues(camera.cam_K, cv::Size(camera.width, camera.height), 0.0, 0.0, cam_fovx, cam_fovy, cam_f, cam_pp, cam_pasp);
-		cv::calibrationMatrixValues(projector.cam_K, cv::Size(projector.width, projector.height), 0.0, 0.0, proj_fovx, proj_fovy, proj_f, proj_pp, proj_pasp);
+		//// 焦点距離とレンズ主点
+  //      double cam_f, proj_f, cam_fovx, cam_fovy, proj_fovx, proj_fovy, cam_pasp, proj_pasp;
+  //      cv::Point2d cam_pp, proj_pp;
+		//cv::calibrationMatrixValues(camera.cam_K, cv::Size(camera.width, camera.height), 0.0, 0.0, cam_fovx, cam_fovy, cam_f, cam_pp, cam_pasp);
+		//cv::calibrationMatrixValues(projector.cam_K, cv::Size(projector.width, projector.height), 0.0, 0.0, proj_fovx, proj_fovy, proj_f, proj_pp, proj_pasp);
 
+		std::vector<cv::Point2d>norm_cam_pts, norm_proj_pts;
+		for(int i = 0; i < cam_pts.size(); i++)
+		{
+			cv::Mat ip(3, 1, CV_64FC1);
+			cv::Point2d p;
+			//カメラの点
+			ip.at<double>(0) = cam_pts[i].x;
+			ip.at<double>(1) = cam_pts[i].y;
+			ip.at<double>(2) = 1.0;
+			ip = camera.cam_K.inv()*ip;
+			p.x = ip.at<double>(0);
+			p.y = ip.at<double>(1);
+			norm_cam_pts.push_back(p);
+			//プロジェクタの点
+			ip.at<double>(0) = proj_pts[i].x;
+			ip.at<double>(1) = proj_pts[i].y;
+			ip.at<double>(2) = 1.0;
+			ip = projector.cam_K.inv()*ip;
+			p.x = ip.at<double>(0);
+			p.y = ip.at<double>(1);
+			norm_proj_pts.push_back(p);
+		}
 
-		cv::InputArray _points1 = cam_pts;
-		cv::InputArray _points2 = proj_pts;
+		cv::InputArray _points1 = norm_cam_pts;
+		cv::InputArray _points2 = norm_proj_pts;
+
+		//cv::InputArray _points1 = cam_pts;
+		//cv::InputArray _points2 = proj_pts;
 
 		cv::Mat points1, points2; //1:カメラ2:プロジェクタ
 		_points1.getMat().copyTo(points1);
@@ -237,10 +313,10 @@ public:
 		points1.convertTo(points1, CV_64F);
 		points2.convertTo(points2, CV_64F);
 
-		points1.col(0) = (points1.col(0) - cam_pp.x) / cam_f;
-		points2.col(0) = (points2.col(0) - proj_pp.x) / proj_f;
-		points1.col(1) = (points1.col(1) - cam_pp.y) / cam_f;
-		points2.col(1) = (points2.col(1) - proj_pp.y) / proj_f;
+		//points1.col(0) = (points1.col(0) - cam_pp.x) / cam_f;
+		//points2.col(0) = (points2.col(0) - proj_pp.x) / proj_f;
+		//points1.col(1) = (points1.col(1) - cam_pp.y) / cam_f;
+		//points2.col(1) = (points2.col(1) - proj_pp.y) / proj_f;
 
 		points1 = points1.t();
 		points2 = points2.t();

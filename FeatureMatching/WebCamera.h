@@ -150,7 +150,7 @@ public:
 				double cam_error = cv::calibrateCamera(worldPoints, cameraPoints, cv::Size(width, height), cam_K, cam_dist, cam_R, cam_T, cv::CALIB_FIX_K3, 
 																			cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 200, DBL_EPSILON));
 				//‡BŒ‹‰Ê‚Ì•Û‘¶
-				cv::FileStorage fs("inCame.xml", cv::FileStorage::WRITE);
+				cv::FileStorage fs("Camera.xml", cv::FileStorage::WRITE);
 				fs << "cam_K" << cam_K << "cam_dist" << cam_dist
 				<< "cam_R0" << cam_R.at(0) << "cam_T0" << cam_T.at(0);
 				fs.release();
