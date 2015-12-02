@@ -17,6 +17,7 @@ int main()
 		printf("1 : カメラキャリブレーション\n");
 		printf("2 : カメラ・プロジェクタのキャリブレーション結果読み込み\n");
 		printf("3: カメラ・プロジェクタの相対位置推定\n");
+		printf("4: GroundTruth\n");
 		printf("c : 撮影\n"); 
 
 	//カメラ
@@ -129,8 +130,12 @@ int main()
 				std::cout << "_t2:\n"<< _t2 <<std::endl;
 				view2 = _t2;
 				viewer.addCoordinateSystem(0.5, view2);
-
-
+			}
+			break;
+			case '4':
+			{
+				//data loading
+				loadFile("../groundtruth_1221634.xml");
 			}
 			break;
 		default:
@@ -140,4 +145,32 @@ int main()
 	}
 
 	return 0;
+}
+
+
+//**Loading datas**//
+cv::Mat K1 = cv::Mat::eye(3,3,CV_64F);
+cv::Mat K2 = cv::Mat::eye(3,3,CV_64F);
+cv::Mat R2 = cv::Mat::eye(3,3,CV_64F);
+cv::Mat t2;
+
+std::vector<cv::Point3d> worldPoints; //対応点の3次元座標
+std::vector<cv::Point2d> imagePoints1; //カメラ1画像への射影点
+std::vector<cv::Point2d> imagePoints2; //カメラ2画像への射影点
+
+void loadFile(const std::string& filename)
+{
+	cv::FileStorage fs(filename, cv::FileStorage::READ);
+	cv::FileNode node(fs.fs, NULL);
+
+	read(node["worldPoints"], worldPoints);
+	read(node["imagePoints1"], imagePoints2);
+	read(node["imagePoints2"], imagePoints2);
+
+	read(node["K1"], K1);
+	read(node["K2"], K2);
+	read(node["R2"], R2);
+	read(node["t2"], t2);
+
+	std::cout << "file loaded." << std::endl;
 }
