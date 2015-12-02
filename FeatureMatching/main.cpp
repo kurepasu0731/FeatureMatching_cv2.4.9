@@ -192,6 +192,38 @@ int main()
 
 				std::cout <<"\nground truth\n" << "R2:\n" << R2 <<std:: endl;
 				std::cout << "t2:\n" << t2 << std::endl;
+
+				// 3Dƒrƒ…[ƒA
+				pcl::visualization::PCLVisualizer viewer("3D Viewer");
+				viewer.setBackgroundColor(0, 0, 0);
+				viewer.addCoordinateSystem(2.0);
+				viewer.initCameraParameters();
+				Eigen::Affine3f view1, view2, view3;
+				Eigen::Matrix4f _t1, _t2cal, _t2;
+				//E1‚ÌŒ‹‰Ê
+				_t1 << (float)R1.at<double>(0,0) , (float)R1.at<double>(0,1) , (float)R1.at<double>(0,2) , (float)t1.at<double>(0,0), 
+						  (float)R1.at<double>(1,0) , (float)R1.at<double>(1,1) , (float)R1.at<double>(1,2) , (float)t1.at<double>(1,0), 
+						  (float)R1.at<double>(2,0) , (float)R1.at<double>(2,1) , (float)R1.at<double>(2,2) , (float)t1.at<double>(2,0), 
+						  0.0f, 0.0f ,0.0f, 1.0f;
+				std::cout << "_t1:\n"<< _t1 <<std::endl;
+				view1 = _t1;
+				viewer.addCoordinateSystem(0.2, view1);
+				//E2‚ÌŒ‹‰Ê
+				_t2cal << (float)R2_cal.at<double>(0,0) , (float)R2_cal.at<double>(0,1) , (float)R2_cal.at<double>(0,2) , (float)t2_cal.at<double>(0,0), 
+						  (float)R2_cal.at<double>(1,0) , (float)R2_cal.at<double>(1,1) , (float)R2_cal.at<double>(1,2) , (float)t2_cal.at<double>(1,0), 
+						  (float)R2_cal.at<double>(2,0) , (float)R2_cal.at<double>(2,1) , (float)R2_cal.at<double>(2,2) , (float)t2_cal.at<double>(2,0), 
+						  0.0f, 0.0f ,0.0f, 1.0f;
+				std::cout << "_t2:\n"<< _t2cal <<std::endl;
+				view2 = _t2cal;
+				viewer.addCoordinateSystem(0.5, view2);
+				//ground truth
+				_t2 << (float)R2.at<double>(0,0) , (float)R2.at<double>(0,1) , (float)R2.at<double>(0,2) , (float)t2.at<double>(0,0), 
+						  (float)R2.at<double>(1,0) , (float)R2.at<double>(1,1) , (float)R2.at<double>(1,2) , (float)t2.at<double>(1,0), 
+						  (float)R2.at<double>(2,0) , (float)R2.at<double>(2,1) , (float)R2.at<double>(2,2) , (float)t2.at<double>(2,0), 
+						  0.0f, 0.0f ,0.0f, 1.0f;
+				std::cout << "_t2:\n"<< _t2 <<std::endl;
+				view3 = _t2;
+				viewer.addCoordinateSystem(1.0, view3);
 			}
 			break;
 		default:
