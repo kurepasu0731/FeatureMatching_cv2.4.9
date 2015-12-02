@@ -161,7 +161,7 @@ int main()
 			case '4':
 			{
 				//data loading
-				loadFile("../groundtruth_1221634.xml");
+				loadFile("../groundtruth_1222032.xml");
 
 				//SfM
 				SfM sfm("./Image/capture/cap38.jpg", "./Image/capture/cap40.jpg", mainCamera, mainProjector);
