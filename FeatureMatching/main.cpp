@@ -185,12 +185,12 @@ int main()
 				sfm.recoverPose(E2, R2_cal, t2_cal);
 				//‡BŠî–{s—ñ‚Ì•ª‰ğ
 				//sfm.findProCamPose(E, R, t);
-				std::cout << "\nR1:\n" << R1 << std::endl;
+				std::cout << "\nE1 result:\nR1:\n" << R1 << std::endl;
 				std::cout << "t1:\n" << t1 << std::endl;
-				std::cout << "\nR2:\n" << R2_cal << std::endl;
+				std::cout << "\nE2 result:\nR2:\n" << R2_cal << std::endl;
 				std::cout << "t2:\n" << t2_cal << std::endl;
 
-				std::cout <<"\ngrount truth\n" << "R2:\n" << R2 <<std:: endl;
+				std::cout <<"\nground truth\n" << "R2:\n" << R2 <<std:: endl;
 				std::cout << "t2:\n" << t2 << std::endl;
 			}
 			break;

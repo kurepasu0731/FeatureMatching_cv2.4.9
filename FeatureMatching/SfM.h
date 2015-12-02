@@ -38,12 +38,12 @@ public:
 		std::cout << "proj_dist:\n" << projector.cam_dist << std::endl;
 
 		//歪み除去して読み込み(1枚目：カメラ　2枚目:プロジェクタ)
-		cv::undistort(cv::imread(camImageName), src_camImage, camera.cam_K, camera.cam_dist);
-		cv::undistort(cv::imread(projImageName), src_projImage, projector.cam_K, projector.cam_dist);
+//		cv::undistort(cv::imread(camImageName), src_camImage, camera.cam_K, camera.cam_dist);
+//		cv::undistort(cv::imread(projImageName), src_projImage, projector.cam_K, projector.cam_dist);
 
 		//歪み補正なし
-		//src_camImage = cv::imread(camImageName);
-		//src_projImage = cv::imread(projImageName);
+		src_camImage = cv::imread(camImageName);
+		src_projImage = cv::imread(projImageName);
 	};
 	~SfM(){};
 
