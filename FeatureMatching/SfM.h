@@ -24,7 +24,7 @@ public:
 	cv::Mat result; //結果描画用
 
 	//特徴点から抽出した対応点
-	std::vector<cv::Point2f>cam_pts, proj_pts;
+	std::vector<cv::Point2d>cam_pts, proj_pts;
 	
 	//コンストラクタ
 	SfM(const char *camImageName, const char *projImageName, WebCamera cam, WebCamera proj)

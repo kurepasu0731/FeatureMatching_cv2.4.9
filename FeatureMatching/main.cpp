@@ -9,6 +9,32 @@
 #include <pcl/point_types.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
+//**Loading datas**//
+cv::Mat K1 = cv::Mat::eye(3,3,CV_64F);
+cv::Mat K2 = cv::Mat::eye(3,3,CV_64F);
+cv::Mat R2 = cv::Mat::eye(3,3,CV_64F);
+cv::Mat t2;
+
+std::vector<cv::Point3d> worldPoints; //対応点の3次元座標
+std::vector<cv::Point2d> imagePoints1; //カメラ1画像への射影点
+std::vector<cv::Point2d> imagePoints2; //カメラ2画像への射影点
+
+void loadFile(const std::string& filename)
+{
+	cv::FileStorage fs(filename, cv::FileStorage::READ);
+	cv::FileNode node(fs.fs, NULL);
+
+	read(node["worldPoints"], worldPoints);
+	read(node["imagePoints1"], imagePoints1);
+	read(node["imagePoints2"], imagePoints2);
+
+	read(node["K1"], K1);
+	read(node["K2"], K2);
+	read(node["R2"], R2);
+	read(node["t2"], t2);
+
+	std::cout << "file loaded." << std::endl;
+}
 
 int main()
 {
@@ -21,9 +47,9 @@ int main()
 		printf("c : 撮影\n"); 
 
 	//カメラ
-	WebCamera mainCamera(640, 480, "webCamera0");
+	WebCamera mainCamera(1600, 1400, "webCamera0");
 	//プロジェクタ
-	WebCamera mainProjector(640, 480, "projector0");
+	WebCamera mainProjector(1440, 900, "projector0");
 
 	int frame = 0;
 
@@ -136,6 +162,36 @@ int main()
 			{
 				//data loading
 				loadFile("../groundtruth_1221634.xml");
+
+				//SfM
+				SfM sfm("./Image/capture/cap38.jpg", "./Image/capture/cap40.jpg", mainCamera, mainProjector);
+
+				sfm.cam_pts = imagePoints1;
+				sfm.proj_pts = imagePoints2;
+				sfm.camera.cam_K = K1;
+				sfm.projector.cam_K = K2;
+
+				//②基本行列の算出
+				cv::Mat E1 = sfm.findEssentialMat(); //cv::calibrationMatrixValues
+				cv::Mat E2 = sfm.findEssentialMat2();//内部行列の逆行列を掛ける
+
+				cv::Mat R1 = cv::Mat::eye(3,3,CV_64F);
+				cv::Mat t1 = cv::Mat::zeros(3,1,CV_64F);
+				cv::Mat R2_cal = cv::Mat::eye(3,3,CV_64F);
+				cv::Mat t2_cal = cv::Mat::zeros(3,1,CV_64F);
+
+				//③R,tの算出
+				sfm.recoverPose(E1, R1, t1);
+				sfm.recoverPose(E2, R2_cal, t2_cal);
+				//③基本行列の分解
+				//sfm.findProCamPose(E, R, t);
+				std::cout << "\nR1:\n" << R1 << std::endl;
+				std::cout << "t1:\n" << t1 << std::endl;
+				std::cout << "\nR2:\n" << R2_cal << std::endl;
+				std::cout << "t2:\n" << t2_cal << std::endl;
+
+				std::cout <<"\ngrount truth\n" << "R2:\n" << R2 <<std:: endl;
+				std::cout << "t2:\n" << t2 << std::endl;
 			}
 			break;
 		default:
@@ -145,32 +201,4 @@ int main()
 	}
 
 	return 0;
-}
-
-
-//**Loading datas**//
-cv::Mat K1 = cv::Mat::eye(3,3,CV_64F);
-cv::Mat K2 = cv::Mat::eye(3,3,CV_64F);
-cv::Mat R2 = cv::Mat::eye(3,3,CV_64F);
-cv::Mat t2;
-
-std::vector<cv::Point3d> worldPoints; //対応点の3次元座標
-std::vector<cv::Point2d> imagePoints1; //カメラ1画像への射影点
-std::vector<cv::Point2d> imagePoints2; //カメラ2画像への射影点
-
-void loadFile(const std::string& filename)
-{
-	cv::FileStorage fs(filename, cv::FileStorage::READ);
-	cv::FileNode node(fs.fs, NULL);
-
-	read(node["worldPoints"], worldPoints);
-	read(node["imagePoints1"], imagePoints2);
-	read(node["imagePoints2"], imagePoints2);
-
-	read(node["K1"], K1);
-	read(node["K2"], K2);
-	read(node["R2"], R2);
-	read(node["t2"], t2);
-
-	std::cout << "file loaded." << std::endl;
 }
