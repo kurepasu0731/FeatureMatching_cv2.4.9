@@ -74,8 +74,31 @@ public:
 			matcher->match(descriptor1, descriptor2, dmatch);
 		}
 
+		//最小距離
+		double min_dist = DBL_MAX;
+		for(int j = 0; j < (int)dmatch.size(); j++)
+		{
+			double dist = dmatch[j].distance;
+			if(dist < min_dist) min_dist = (dist < 1.0) ? 1.0 : dist;
+		}
+
+		//良いペアのみ残す
+		double cutoff = 5.0 * min_dist;
+		std::set<int> existing_trainIdx;
+		std::vector<cv::DMatch> matches_good;
+		for(int j = 0; j < (int)dmatch.size(); j++)
+		{
+			if(dmatch[j].trainIdx <= 0) dmatch[j].trainIdx = dmatch[j].imgIdx;
+			if(dmatch[j].distance > 0.0 && dmatch[j].distance < cutoff){
+				if(existing_trainIdx.find(dmatch[j].trainIdx) == existing_trainIdx.end() && dmatch[j].trainIdx >= 0 && dmatch[j].trainIdx < (int)keypoint2.size()) {
+					matches_good.push_back(dmatch[j]);
+                    existing_trainIdx.insert(dmatch[j].trainIdx);
+				}
+			}
+		}
+
 		// マッチング結果の表示
-		cv::drawMatches(src_image1, keypoint1, src_image2, keypoint2, dmatch, result);
+		cv::drawMatches(src_image1, keypoint1, src_image2, keypoint2, matches_good, result);
 		cv::imshow("matching", result);
 	}
 
