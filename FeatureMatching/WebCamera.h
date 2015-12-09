@@ -82,6 +82,12 @@ public:
 		cv::imshow(winName, frame);
 	}
 
+	cv::Mat getFrame()
+	{
+		vc >> frame;
+		return frame;
+	}
+
 	void capture()
 	{
 		std::string filename = save_dir + "cap"+ std::to_string(capture_num) + ".jpg";

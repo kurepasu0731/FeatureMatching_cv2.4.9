@@ -102,6 +102,27 @@ public:
 		cv::imshow("matching", result);
 	}
 
+
+	//コーナー検出
+	cv::Mat findCorners(cv::Mat frame){
+		cv::Mat gray_img1;
+		cv::cvtColor(frame, gray_img1, CV_BGR2GRAY);
+
+		//コーナー検出
+		std::vector<cv::Point2f> corners1;
+		int corners = 150;
+		cv::goodFeaturesToTrack(gray_img1, corners1, corners, 0.001, 15);
+
+		//描画
+		for(int i = 0; i < corners1.size(); i++)
+		{
+			cv::circle(frame, corners1[i], 1, cv::Scalar(0, 0, 255), 3);
+		}
+
+		return frame;
+
+	}
+
 	void saveResult(const char *resultImageName)
 	{
 		cv::imwrite(resultImageName, result);

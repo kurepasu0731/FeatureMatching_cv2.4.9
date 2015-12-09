@@ -44,12 +44,13 @@ int main()
 		printf("2 : カメラ・プロジェクタのキャリブレーション結果読み込み\n");
 		printf("3: カメラ・プロジェクタの相対位置推定\n");
 		printf("4: GroundTruth\n");
+		printf("5: コーナー検出\n");
 		printf("c : 撮影\n"); 
 
 	//カメラ
-	WebCamera mainCamera(1600, 1400, "webCamera0");
+	WebCamera mainCamera(640, 480, "webCamera0");
 	//プロジェクタ
-	WebCamera mainProjector(1440, 900, "projector0");
+	WebCamera mainProjector(640, 480, "projector0");
 
 	int frame = 0;
 
@@ -88,7 +89,7 @@ int main()
 
 		case '0':
 			{
-				FeatureMatching featureMatching("./Image/movie/cap1.jpg", "./Image/movie/cap2.jpg", "SIFT", "SIFT", "BruteForce-L1", true);
+				FeatureMatching featureMatching("./Image/chesspattern/cap0.jpg", "./Image/chesspattern/projector.jpg", "ORB", "ORB", "BruteForce-L1", true);
 				featureMatching.apply();
 				featureMatching.saveResult("./Image/result/result_10.jpg");
 				break;
@@ -226,6 +227,31 @@ int main()
 				viewer.addCoordinateSystem(1.0, view3);
 			}
 			break;
+		case '5':
+			{
+				FeatureMatching featureMatching("./Image/chesspattern/cap4.jpg", "./Image/chesspattern/chess_pattern_1280_800.jpg", "ORB", "ORB", "BruteForce-L1", true);
+				
+				//プロジェクタ画像のコーナー検出
+				cv::imshow("Projector image", featureMatching.findCorners(featureMatching.src_image2));
+				cv::namedWindow("Camera image");
+
+
+				//カメラメインループ
+				while(true)
+				{
+					// 何かのキーが入力されたらループを抜ける
+					command = cv::waitKey(33);
+					if ( command > 0 ){
+						//cキーで撮影
+						if(command == 'c')
+							mainCamera.capture();
+						else break;
+					}
+					cv::imshow("Camera image", featureMatching.findCorners(mainCamera.getFrame()));
+				}
+
+				break;
+			}
 		default:
 			exit(0);
 			break;
