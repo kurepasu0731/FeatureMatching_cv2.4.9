@@ -9,6 +9,15 @@
 #include <pcl/point_types.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
+//カメラ
+WebCamera mainCamera(1920, 1080, "webCamera0");
+//プロジェクタ
+WebCamera mainProjector(1280, 800, "projector0");
+//CalibデータのR,t
+cv::Mat calib_R = cv::Mat::eye(3,3,CV_64F);
+cv::Mat calib_t;
+
+
 //**Loading datas**//
 cv::Mat K1 = cv::Mat::eye(3,3,CV_64F);
 cv::Mat K2 = cv::Mat::eye(3,3,CV_64F);
@@ -36,6 +45,25 @@ void loadFile(const std::string& filename)
 	std::cout << "file loaded." << std::endl;
 }
 
+void loadProCamCalibFile(const std::string& filename)
+{
+	cv::FileStorage fs(filename, cv::FileStorage::READ);
+	cv::FileNode node(fs.fs, NULL);
+
+	//カメラパラメータ読み込み
+	read(node["cam_K"], mainCamera.cam_K);
+	read(node["cam_dist"], mainCamera.cam_dist);
+	//プロジェクタパラメータ読み込み
+	read(node["proj_K"], mainProjector.cam_K);
+	read(node["proj_dist"], mainProjector.cam_dist);
+
+	read(node["R"], calib_R);
+	read(node["T"], calib_t);
+
+	std::cout << "ProCamCalib data file loaded." << std::endl;
+}
+
+
 int main()
 {
 	//操作説明
@@ -47,10 +75,6 @@ int main()
 		printf("5: コーナー検出\n");
 		printf("c : 撮影\n"); 
 
-	//カメラ
-	WebCamera mainCamera(640, 480, "webCamera0");
-	//プロジェクタ
-	WebCamera mainProjector(640, 480, "projector0");
 
 	int frame = 0;
 
@@ -102,19 +126,20 @@ int main()
 			break;
 		case '2' :
 			{
-				mainCamera.loadCalibParam("WebCamera.xml");
-				printf("カメラキャリブレーションデータ読み込み\n");
-				mainProjector.loadCalibParam("WebCamera.xml");
-				printf("プロジェクタキャリブレーションデータ読み込み\n");
+				loadProCamCalibFile("./calibration.xml");
+				//mainCamera.loadCalibParam("WebCamera.xml");
+				//printf("カメラキャリブレーションデータ読み込み\n");
+				//mainProjector.loadCalibParam("WebCamera.xml");
+				//printf("プロジェクタキャリブレーションデータ読み込み\n");
 			}
 			break;
 		case '3':
 			{
-				//SfM
-				SfM sfm("./Image/capture/cap38.jpg", "./Image/capture/cap40.jpg", mainCamera, mainProjector);
+				//SfM (1枚目：カメラ　2枚目:プロジェクタ)
+				SfM sfm("./Image/1210/cap3.jpg", "./Image/1210/projector.jpg", mainCamera, mainProjector);
 				//①特徴点マッチングで対応点取得
 				sfm.featureMatching("ORB", "ORB", "BruteForce-L1", true);
-				sfm.saveResult("./Image/result/result_10.jpg");
+				sfm.saveResult("./Image/result/result_1210.jpg");
 				//②基本行列の算出
 				cv::Mat E1 = sfm.findEssentialMat(); //cv::calibrationMatrixValues
 				cv::Mat E2 = sfm.findEssentialMat2();//内部行列の逆行列を掛ける
@@ -139,8 +164,8 @@ int main()
 				viewer.setBackgroundColor(0, 0, 0);
 				viewer.addCoordinateSystem(2.0);
 				viewer.initCameraParameters();
-				Eigen::Affine3f view1, view2;
-				Eigen::Matrix4f _t1, _t2;
+				Eigen::Affine3f view1, view2, view3;
+				Eigen::Matrix4f _t1, _t2, _t3;
 				//E1の結果
 				_t1 << (float)R1.at<double>(0,0) , (float)R1.at<double>(0,1) , (float)R1.at<double>(0,2) , (float)t1.at<double>(0,0), 
 						  (float)R1.at<double>(1,0) , (float)R1.at<double>(1,1) , (float)R1.at<double>(1,2) , (float)t1.at<double>(1,0), 
@@ -148,7 +173,7 @@ int main()
 						  0.0f, 0.0f ,0.0f, 1.0f;
 				std::cout << "_t1:\n"<< _t1 <<std::endl;
 				view1 = _t1;
-				viewer.addCoordinateSystem(1.0, view1);
+				//viewer.addCoordinateSystem(0.2, view1);
 				//E2の結果
 				_t2 << (float)R2.at<double>(0,0) , (float)R2.at<double>(0,1) , (float)R2.at<double>(0,2) , (float)t2.at<double>(0,0), 
 						  (float)R2.at<double>(1,0) , (float)R2.at<double>(1,1) , (float)R2.at<double>(1,2) , (float)t2.at<double>(1,0), 
@@ -157,6 +182,15 @@ int main()
 				std::cout << "_t2:\n"<< _t2 <<std::endl;
 				view2 = _t2;
 				viewer.addCoordinateSystem(0.5, view2);
+				//calibファイルの結果(正解)
+				_t3 << (float)calib_R.at<double>(0,0) , (float)calib_R.at<double>(0,1) , (float)calib_R.at<double>(0,2) , (float)(calib_t.at<double>(0,0) / 500), 
+					(float)calib_R.at<double>(1,0) , (float)calib_R.at<double>(1,1) , (float)calib_R.at<double>(1,2) , (float)(calib_t.at<double>(1,0) / 500), 
+					(float)calib_R.at<double>(2,0) , (float)calib_R.at<double>(2,1) , (float)calib_R.at<double>(2,2) , (float)(calib_t.at<double>(2,0) / 500), 
+						  0.0f, 0.0f ,0.0f, 1.0f;
+				std::cout << "_t3:\n"<< _t3 <<std::endl;
+				view3 = _t3;
+				viewer.addCoordinateSystem(1.0, view3);
+
 			}
 			break;
 			case '4':

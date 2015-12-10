@@ -38,11 +38,11 @@ public:
 		std::cout << "proj_dist:\n" << projector.cam_dist << std::endl;
 
 		//歪み除去して読み込み(1枚目：カメラ　2枚目:プロジェクタ)
-//		cv::undistort(cv::imread(camImageName), src_camImage, camera.cam_K, camera.cam_dist);
-//		cv::undistort(cv::imread(projImageName), src_projImage, projector.cam_K, projector.cam_dist);
+		cv::undistort(cv::imread(camImageName), src_camImage, camera.cam_K, camera.cam_dist);
+		//cv::undistort(cv::imread(projImageName), src_projImage, projector.cam_K, projector.cam_dist);
 
 		//歪み補正なし
-		src_camImage = cv::imread(camImageName);
+		//src_camImage = cv::imread(camImageName);
 		src_projImage = cv::imread(projImageName);
 	};
 	~SfM(){};
@@ -91,48 +91,50 @@ public:
 			matcher->match(descriptor1, descriptor2, dmatch);
 		}
 
-//		//最小距離
-//		double min_dist = DBL_MAX;
-//		for(int j = 0; j < (int)dmatch.size(); j++)
-//		{
-//			double dist = dmatch[j].distance;
-//			if(dist < min_dist) min_dist = (dist < 1.0) ? 1.0 : dist;
-//		}
-//
-//		//良いペアのみ残す
-//		double cutoff = 5.0 * min_dist;
-//		std::set<int> existing_trainIdx;
-//		std::vector<cv::DMatch> matches_good;
-//		for(int j = 0; j < (int)dmatch.size(); j++)
-//		{
-//			if(dmatch[j].trainIdx <= 0) dmatch[j].trainIdx = dmatch[j].imgIdx;
-//			if(dmatch[j].distance > 0.0 && dmatch[j].distance < cutoff){
-//			//x座標で決め打ちしきい値(マスクの代わり)
-////			if(dmatch[j].distance > 0.0 && dmatch[j].distance < cutoff && keypoint1[dmatch[j].queryIdx].pt.x > 240 && keypoint2[dmatch[j].trainIdx].pt.x > 240){
-//				if(existing_trainIdx.find(dmatch[j].trainIdx) == existing_trainIdx.end() && dmatch[j].trainIdx >= 0 && dmatch[j].trainIdx < (int)keypoint2.size()) {
-//					matches_good.push_back(dmatch[j]);
-//                    existing_trainIdx.insert(dmatch[j].trainIdx);
-//				}
-//			}
-//		}
-//
-//        // 対応点の登録(5ペア以上は必要)
-//        if (matches_good.size() > 10) {
-//            for (int j = 0; j < (int)matches_good.size(); j++) {
-//                cam_pts.push_back(keypoint1[matches_good[j].queryIdx].pt);
-//                proj_pts.push_back(keypoint2[matches_good[j].trainIdx].pt);
-//            }
-//		}
-        if (dmatch.size() > 10) {
-            for (int j = 0; j < (int)dmatch.size(); j++) {
-                cam_pts.push_back(keypoint1[dmatch[j].queryIdx].pt);
-                proj_pts.push_back(keypoint2[dmatch[j].trainIdx].pt);
-            }
+		//最小距離
+		double min_dist = DBL_MAX;
+		for(int j = 0; j < (int)dmatch.size(); j++)
+		{
+			double dist = dmatch[j].distance;
+			if(dist < min_dist) min_dist = (dist < 1.0) ? 1.0 : dist;
 		}
 
+		std::cout << "min_dist: " << min_dist << std::endl;
+
+		//良いペアのみ残す
+		double cutoff = 1.6 * min_dist;
+		std::set<int> existing_trainIdx;
+		std::vector<cv::DMatch> matches_good;
+		for(int j = 0; j < (int)dmatch.size(); j++)
+		{
+			if(dmatch[j].trainIdx <= 0) dmatch[j].trainIdx = dmatch[j].imgIdx;
+			if(dmatch[j].distance > 0.0 && dmatch[j].distance < cutoff){
+				if(existing_trainIdx.find(dmatch[j].trainIdx) == existing_trainIdx.end() && dmatch[j].trainIdx >= 0 && dmatch[j].trainIdx < (int)keypoint2.size()) {
+					matches_good.push_back(dmatch[j]);
+                    existing_trainIdx.insert(dmatch[j].trainIdx);
+				}
+			}
+		}
+
+		std::cout << "対応点数:" << matches_good.size() << std::endl;
+
+        // 対応点の登録(5ペア以上は必要)
+        if (matches_good.size() > 10) {
+            for (int j = 0; j < (int)matches_good.size(); j++) {
+                cam_pts.push_back(keypoint1[matches_good[j].queryIdx].pt);
+                proj_pts.push_back(keypoint2[matches_good[j].trainIdx].pt);
+            }
+		}
+  //      if (dmatch.size() > 10) {
+  //          for (int j = 0; j < (int)dmatch.size(); j++) {
+  //              cam_pts.push_back(keypoint1[dmatch[j].queryIdx].pt);
+  //              proj_pts.push_back(keypoint2[dmatch[j].trainIdx].pt);
+  //          }
+		//}
+
 		// マッチング結果の表示
-		//cv::drawMatches(src_camImage, keypoint1, src_projImage, keypoint2, matches_good, result);
-		cv::drawMatches(src_camImage, keypoint1, src_projImage, keypoint2, dmatch, result);
+		cv::drawMatches(src_camImage, keypoint1, src_projImage, keypoint2, matches_good, result);
+		//cv::drawMatches(src_camImage, keypoint1, src_projImage, keypoint2, dmatch, result);
 		//cv::Mat resize;
 		//result.copyTo(resize);
 		//cv::resize(result, resize, resize.size(), 0.5, 0.5);
@@ -469,6 +471,7 @@ public:
 		R2.copyTo(_R2);
 		t.copyTo(_t);
 	}
+
 };
 	
 #endif
